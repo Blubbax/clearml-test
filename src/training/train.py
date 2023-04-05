@@ -15,6 +15,7 @@ from sklearn.metrics import accuracy_score, f1_score
 
 from skl2onnx import convert_sklearn
 from skl2onnx.common.data_types import FloatTensorType
+from model.model import ModelLogReg
 
 
 def generate_datasets(X, Y, train_index, test_index):
@@ -62,8 +63,8 @@ best_score = -10
 for i, (train_index, test_index) in enumerate(kf.split(X)):
     X_train, X_test, Y_train, Y_test = generate_datasets(X, Y, train_index, test_index)
 
-    model = LogisticRegression(solver='liblinear')
-    rfe = RFE(model, n_features_to_select=params['columns'])
+    rfe = ModelLogReg(params['columns'])
+    rfe = rfe.get_model()
     fit = rfe.fit(X_train, Y_train)
     prediction = rfe.predict(X_test)
 
