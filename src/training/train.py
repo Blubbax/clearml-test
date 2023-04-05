@@ -1,3 +1,7 @@
+try:
+    import joblib
+except ImportError:
+    from sklearn.externals import joblib
 import logging
 from pandas import read_csv
 from clearml import Dataset, Task, TaskTypes, Logger, OutputModel
@@ -18,13 +22,6 @@ from skl2onnx.common.data_types import FloatTensorType
 from model.model import ModelLogReg
 
 
-def generate_datasets(X, Y, train_index, test_index):
-    X_train = X.iloc[train_index]
-    X_test = X.iloc[test_index]
-    Y_train = Y.iloc[train_index]
-    Y_test = Y.iloc[test_index]
-    return X_train, X_test, Y_train, Y_test
-
 
 
 task = Task.init(
@@ -33,6 +30,7 @@ task = Task.init(
     task_type=TaskTypes.training
 )
 # task.execute_remotely(queue_name="default")
+
 
 logger = task.get_logger()
 
@@ -56,45 +54,30 @@ df = pd.read_csv(Path(dataset_path) / "iris.csv", encoding= 'unicode_escape')
 Y = df[['class']].copy()
 X = df.drop(columns=['class'])
 
+X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
+
 kf = KFold(n_splits=params['folds'], shuffle=True)
 
-best_score = -10
+model = ModelLogReg(params['columns']).get_model()
+model.fit(X_train, y_train)
 
-for i, (train_index, test_index) in enumerate(kf.split(X)):
-    X_train, X_test, Y_train, Y_test = generate_datasets(X, Y, train_index, test_index)
+# joblib.dump(model, 'model.pkl', compress=True)
 
-    rfe = ModelLogReg(params['columns'])
-    rfe = rfe.get_model()
-    fit = rfe.fit(X_train, Y_train)
-    prediction = rfe.predict(X_test)
+results = cross_val_score(model, X, Y, cv=kf, scoring=params['score'])
 
-    accuracy = accuracy_score(Y_test, prediction)
-    f1 = f1_score(Y_test, prediction, average='weighted')
-
-    logger.report_scalar(
-        "Accuracy", "Accuracy", iteration=i, value=accuracy
-    )
-    logger.report_scalar(
-        "F1", "F1", iteration=i, value=f1
-    )
-
-    if params['score'] == 'f1':
-        if f1 > best_score:
-            best_score = f1
-            best_model = fit
-    else:
-        if accuracy > best_score:
-            best_score = accuracy
-            best_model = fit
+logger.report_scalar(
+    params['score'], params['score'], iteration=0, value=results.mean()
+)
 
 module_path = Path(os.path.abspath(os.getcwd()))
 model_path = module_path / "models" / ("iris_"+str(task.id)+".onnx")
 
-logger.report_text(str(best_model.get_feature_names_out()))
+# logger.report_text(str(best_model.get_feature_names_out()))
 
 initial_type = [('float_input', FloatTensorType([None, 8]))]
 
-onnx = convert_sklearn(best_model, initial_types=initial_type)
+# Convert to ONNX
+onnx = convert_sklearn(model, initial_types=initial_type)
 with open(os.path.abspath(model_path), "wb") as f:
     f.write(onnx.SerializeToString())
 
