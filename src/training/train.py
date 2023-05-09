@@ -66,7 +66,7 @@ model.fit(X_train, y_train)
 results = cross_val_score(model, X, Y, cv=kf, scoring=params['score'])
 
 logger.report_scalar(
-    params['score'], params['score'], iteration=0, value=results.mean()
+    params['score'], params['score'],      =0, value=results.mean()
 )
 
 module_path = Path(os.path.abspath(os.getcwd()))
@@ -82,5 +82,7 @@ with open(os.path.abspath(model_path), "wb") as f:
     f.write(onnx.SerializeToString())
 
 output_model = OutputModel(task=task)
-output_model.update_weights(register_uri=os.path.abspath(model_path))
+#output_model.set_upload_destination = "/clearmlmodels/"
+output_model.update_weights(register_uri="C:/clearml/models")
+# output_model.update_weights(register_uri=os.path.abspath(model_path))
 

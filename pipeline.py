@@ -70,9 +70,9 @@ pipe.add_step(
 )
 
 # for debugging purposes use local jobs
-# pipe.start_locally(run_pipeline_steps_locally=True)
+pipe.start_locally(run_pipeline_steps_locally=True)
 
 # Starting the pipeline (in the background)
-pipe.start(queue="default")
+# pipe.start(queue="default")
 
 print("done")

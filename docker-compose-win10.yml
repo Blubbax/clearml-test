@@ -29,6 +29,8 @@ services:
       CLEARML__apiserver__pre_populate__zip_files: "/opt/clearml/db-pre-populate"
       CLEARML__apiserver__pre_populate__artifacts_path: "/mnt/fileserver"
       CLEARML__services__async_urls_delete__enabled: "true"
+      CLEARML__SECURE__CREDENTIALS__APISERVER__USER_KEY: "new-key-string"
+      CLEARML__SECURE__CREDENTIALS__APISERVER__USER_SECRET: "new-secret-string"
     ports:
     - "8008:8008"
     networks:
@@ -98,6 +100,8 @@ services:
     volumes:
     - c:/opt/clearml/data/mongo_4/db:/data/db
     - c:/opt/clearml/data/mongo_4/configdb:/data/configdb
+    ports:
+    - "27017:27017"
 
   redis:
     networks:
